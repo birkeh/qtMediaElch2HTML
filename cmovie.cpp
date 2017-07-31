@@ -765,9 +765,9 @@ void cMovieList::open()
 	database.close();
 }
 #endif
-void cMovieList::parse(const QString& szPath, cXBMC* lpXBMC, QStatusBar* lpStatusBar)
+void cMovieList::parse(const QString& szPath, const QStringList& exceptions, cXBMC* lpXBMC, QStatusBar* lpStatusBar)
 {
-	parsePath(szPath, lpXBMC, lpStatusBar);
+	parsePath(szPath, exceptions, lpXBMC, lpStatusBar);
 	m_szGenreList.removeDuplicates();
 
 #ifdef WITHDB
@@ -882,11 +882,19 @@ void cMovieList::parse(const QString& szPath, cXBMC* lpXBMC, QStatusBar* lpStatu
 #endif
 }
 
-void cMovieList::parsePath(const QString& szPath, cXBMC* lpXBMC, QStatusBar* lpStatusBar)
+void cMovieList::parsePath(const QString& szPath, const QStringList& exceptions, cXBMC* lpXBMC, QStatusBar* lpStatusBar)
 {
 	QDir			dir(szPath);
 	if(!dir.exists())
 		return;
+
+	foreach(const QString& p, exceptions)
+	{
+		QString a = szPath;
+		QString	b = p;
+		if(a.replace("\\", "/").startsWith(b.replace("\\", "/")))
+			return;
+	}
 
 	if(lpStatusBar)
 		lpStatusBar->showMessage(QString("%1 %2 ...").arg("scanning").arg(szPath));
@@ -896,7 +904,7 @@ void cMovieList::parsePath(const QString& szPath, cXBMC* lpXBMC, QStatusBar* lpS
 	dirList.removeAll("..");
 
 	for(int z = 0;z < dirList.count();z++)
-		parsePath(QString("%1/%2").arg(szPath).arg(dirList.at(z)), lpXBMC, lpStatusBar);
+		parsePath(QString("%1/%2").arg(szPath).arg(dirList.at(z)), exceptions, lpXBMC, lpStatusBar);
 
 	QStringList	nfoList	= dir.entryList(QStringList() << "*.nfo", QDir::Files);
 	for(int z = 0;z < nfoList.count();z++)

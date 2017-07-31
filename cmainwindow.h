@@ -54,6 +54,13 @@ class cMainWindow : public QMainWindow
 		Sources			type;
 	}	SOURCES, *LPSOURCES;
 
+	typedef struct tagEXCEPTIONS
+	{
+		QStandardItem*	lpPathItem;
+		cPushButton*	lpButton;
+		QModelIndex		index;
+	}	EXCEPTIONS, *LPEXCEPTIONS;
+
 
 public:
 	explicit cMainWindow(QWidget *parent = 0);
@@ -67,6 +74,7 @@ protected:
 	void				saveSettings();
 
 	void				addSourcesLine(Sources type, const QString& szText);
+	void				addExceptionsLine(const QString& szText);
 
 	QString				string2HTML(const QString& sz);
 	QString				preparePath();
@@ -83,6 +91,7 @@ protected:
 private:
 	Ui::cMainWindow*	ui;
 	QStandardItemModel*	m_lpSourcesModel;
+	QStandardItemModel*	m_lpExceptionsModel;
 	QStandardItemModel*	m_lpMoviesModel;
 	QStandardItemModel*	m_lpTVShowsModel;
 	QStandardItemModel*	m_lpGenreFromModel;
@@ -91,6 +100,7 @@ private:
 	QProgressBar*		m_lpStatusProgress;
 
 	QList<SOURCES>		m_SourcesList;
+	QList<EXCEPTIONS>	m_ExceptionsList;
 	QString				m_szLastPath;
 	QString				m_szLastOutputPath;
 
@@ -115,9 +125,12 @@ private:
 	QStringList			convertGenre(const QStringList& szGenreList);
 public slots:
 	void				sourcesButtonClicked(cPushButton* lpButton);
+	void				exceptionsButtonClicked(cPushButton* lpButton);
 private slots:
 	void				on_m_lpAddSources_clicked();
 	void				on_m_lpDeleteSources_clicked();
+	void				on_m_lpAddExceptions_clicked();
+	void				on_m_lpDeleteExceptions_clicked();
 	void				on_m_lpMoviesScan_clicked();
 	void				on_m_lpTVShowsScan_clicked();
 	void				on_m_lpMoviesSelectAll_clicked();

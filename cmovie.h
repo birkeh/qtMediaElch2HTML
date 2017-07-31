@@ -165,13 +165,13 @@ public:
 #ifdef WITHDB
 	void		open();
 #endif
-	void		parse(const QString& szPath, cXBMC* lpXBMC = 0, QStatusBar* lpStatusBar = 0);
+	void		parse(const QString& szPath, const QStringList& exceptions, cXBMC* lpXBMC = 0, QStatusBar* lpStatusBar = 0);
 
 	QStringList	genreList();
 private:
 	QStringList	m_szGenreList;
 protected:
-	void		parsePath(const QString& szPath, cXBMC* lpXBMC, QStatusBar* lpStatusBar);
+	void		parsePath(const QString& szPath, const QStringList& exceptions, cXBMC* lpXBMC, QStatusBar* lpStatusBar);
 };
 
 #endif // CMOVIE_H

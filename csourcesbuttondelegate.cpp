@@ -27,7 +27,7 @@ void cSourcesButtonDelegate::paint(QPainter *painter, const QStyleOptionViewItem
 	QApplication::style()->drawControl(QStyle::CE_PushButton, &button, painter);
 }
 
-bool cSourcesButtonDelegate::editorEvent(QEvent *event, QAbstractItemModel */*model*/, const QStyleOptionViewItem &option, const QModelIndex &/*index*/)
+bool cSourcesButtonDelegate::editorEvent(QEvent *event, QAbstractItemModel * /*model*/, const QStyleOptionViewItem &option, const QModelIndex & /*index*/)
 {
 	if( event->type() == QEvent::MouseButtonRelease )
 	{

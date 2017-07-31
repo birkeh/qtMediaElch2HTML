@@ -140,6 +140,9 @@ cMainWindow::~cMainWindow()
 	if(m_lpSourcesModel)
 		delete m_lpSourcesModel;
 
+	if(m_lpExceptionsModel)
+		delete m_lpExceptionsModel;
+
 	if(m_lpStatusProgress)
 		delete m_lpStatusProgress;
 
@@ -160,9 +163,14 @@ void cMainWindow::init()
 	ui->setupUi(this);
 
 	m_lpSourcesModel			= new QStandardItemModel(0, 3);
-	QStringList	headerLabels	= QStringList() << tr("Type") << tr("Path") << tr("");
-	m_lpSourcesModel->setHorizontalHeaderLabels(headerLabels);
+	QStringList	headerLabels1	= QStringList() << tr("Type") << tr("Path") << tr("");
+	m_lpSourcesModel->setHorizontalHeaderLabels(headerLabels1);
 	ui->m_lpSources->setModel(m_lpSourcesModel);
+
+	m_lpExceptionsModel			= new QStandardItemModel(0, 2);
+	QStringList	headerLabels2	= QStringList() << tr("Path") << tr("");
+	m_lpExceptionsModel->setHorizontalHeaderLabels(headerLabels2);
+	ui->m_lpExceptions->setModel(m_lpExceptionsModel);
 
 	m_lpMoviesModel				= new QStandardItemModel(0, 1);
 	ui->m_lpMovies->setModel(m_lpMoviesModel);
@@ -184,6 +192,13 @@ void cMainWindow::init()
 	ui->m_lpSources->resizeColumnToContents(0);
 	ui->m_lpSources->setColumnWidth(2, 25);
 	ui->m_lpSources->resizeRowsToContents();
+
+	ui->m_lpExceptions->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+	ui->m_lpExceptions->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Fixed);
+
+//	ui->m_lpExceptions->resizeColumnToContents(0);
+	ui->m_lpExceptions->setColumnWidth(1, 25);
+	ui->m_lpExceptions->resizeRowsToContents();
 
 	ui->m_lpMainTab->setCurrentIndex(0);
 
@@ -223,6 +238,16 @@ void cMainWindow::loadSettings()
 		if(szPath.isEmpty())
 			break;
 		addSourcesLine(t, szPath);
+	}
+
+	for(int z = 0;;z++)
+	{
+		QString		szPath;
+
+		szPath	= settings.value(QString("exceptions/path%1").arg(z)).toString();
+		if(szPath.isEmpty())
+			break;
+		addExceptionsLine(szPath);
 	}
 
 	QString	szOutputPath	= settings.value("output/path").toString();
@@ -302,6 +327,7 @@ void cMainWindow::saveSettings()
 	QSettings	settings;
 
 	settings.remove("sources");
+	settings.remove("exceptions");
 	settings.remove("output");
 	settings.remove("xbmc");
 	settings.remove("poster");
@@ -321,6 +347,20 @@ void cMainWindow::saveSettings()
 		{
 			settings.setValue(QString("sources/type%1").arg(i), QVariant(t));
 			settings.setValue(QString("sources/path%1").arg(i), QVariant(szPath));
+			i++;
+		}
+	}
+
+	i	= 0;
+	for(int z = 0;z < m_lpExceptionsModel->rowCount();z++)
+	{
+		QStandardItem*	path	= m_lpExceptionsModel->item(z, 0);
+
+		QString			szPath	= path->text();
+
+		if(!szPath.isEmpty())
+		{
+			settings.setValue(QString("exceptions/path%1").arg(i), QVariant(szPath));
 			i++;
 		}
 	}
@@ -370,6 +410,25 @@ void cMainWindow::addSourcesLine(Sources type, const QString& szText)
 	ui->m_lpSources->resizeRowsToContents();
 }
 
+void cMainWindow::addExceptionsLine(const QString& szText)
+{
+	EXCEPTIONS	e;
+
+	e.lpPathItem	= new QStandardItem(szText);
+	m_lpExceptionsModel->appendRow(e.lpPathItem);
+	e.index			= m_lpExceptionsModel->indexFromItem(e.lpPathItem);
+	e.lpButton		= new cPushButton("...");
+	ui->m_lpExceptions->setIndexWidget(m_lpExceptionsModel->index(e.index.row(), 1), e.lpButton);
+
+	m_ExceptionsList.append(e);
+
+	connect(e.lpButton, SIGNAL(buttonClicked(cPushButton*)), this, SLOT(exceptionsButtonClicked(cPushButton*)));
+
+	ui->m_lpExceptions->resizeColumnToContents(0);
+	ui->m_lpExceptions->setColumnWidth(1, 25);
+	ui->m_lpExceptions->resizeRowsToContents();
+}
+
 void cMainWindow::sourcesButtonClicked(cPushButton* lpButton)
 {
 	for(int z = 0;z < m_SourcesList.count();z++)
@@ -394,6 +453,30 @@ void cMainWindow::sourcesButtonClicked(cPushButton* lpButton)
 	}
 }
 
+void cMainWindow::exceptionsButtonClicked(cPushButton* lpButton)
+{
+	for(int z = 0;z < m_ExceptionsList.count();z++)
+	{
+		if(lpButton == m_ExceptionsList.at(z).lpButton)
+		{
+			QString		szPath		= m_ExceptionsList.at(z).lpPathItem->text();
+			if(szPath.isEmpty())
+				szPath	= m_szLastPath;
+
+			QFileDialog	dlg(this, "select Path", szPath);
+			dlg.setFileMode(QFileDialog::Directory);
+			if(dlg.exec())
+			{
+				QString	szNewPath	= dlg.selectedFiles().at(0);
+				if(szNewPath.isEmpty())
+					return;
+				m_ExceptionsList.at(z).lpPathItem->setText(szNewPath);
+				m_szLastPath	= szNewPath;
+			}
+		}
+	}
+}
+
 void cMainWindow::on_m_lpAddSources_clicked()
 {
 	addSourcesLine(SourcesNone, "");
@@ -411,6 +494,23 @@ void cMainWindow::on_m_lpDeleteSources_clicked()
 	}
 }
 
+void cMainWindow::on_m_lpAddExceptions_clicked()
+{
+	addExceptionsLine("");
+}
+
+void cMainWindow::on_m_lpDeleteExceptions_clicked()
+{
+	if(ui->m_lpExceptions->selectionModel()->selectedIndexes().count() == 0)
+		return;
+
+	for(int z = 0;z < ui->m_lpExceptions->selectionModel()->selectedIndexes().count();z++)
+	{
+		QModelIndex	i	= ui->m_lpExceptions->selectionModel()->selectedIndexes().at(z);
+		m_lpExceptionsModel->removeRow(i.row());
+	}
+}
+
 void cMainWindow::on_m_lpMoviesScan_clicked()
 {
 	if(ui->m_lpXBMC->isChecked())
@@ -422,6 +522,10 @@ void cMainWindow::on_m_lpMoviesScan_clicked()
 	m_lpMoviesModel->clear();
 	m_MovieList.clear();
 
+	QStringList	exceptions;
+	for(int x = 0;x < m_lpExceptionsModel->rowCount();x++)
+		exceptions.append(m_lpExceptionsModel->item(x, 0)->text());
+
 	for(int z = 0;z < m_lpSourcesModel->rowCount();z++)
 	{
 		QStandardItem*	type	= m_lpSourcesModel->item(z, 0);
@@ -431,7 +535,7 @@ void cMainWindow::on_m_lpMoviesScan_clicked()
 		QString			szPath	= path->text();
 
 		if(!szPath.isEmpty() && t == SourcesMovie)
-			m_MovieList.parse(szPath, m_lpXBMC, ui->m_lpStatusBar);
+			m_MovieList.parse(szPath, exceptions, m_lpXBMC, ui->m_lpStatusBar);
 	}
 	ui->m_lpStatusBar->showMessage(QString(""));
 
@@ -460,6 +564,10 @@ void cMainWindow::on_m_lpTVShowsScan_clicked()
 	m_lpTVShowsModel->clear();
 	m_TVShowList.clear();
 
+	QStringList	exceptions;
+	for(int x = 0;x < m_lpExceptionsModel->rowCount();x++)
+		exceptions.append(m_lpExceptionsModel->item(x, 0)->text());
+
 	for(int z = 0;z < m_lpSourcesModel->rowCount();z++)
 	{
 		QStandardItem*	type	= m_lpSourcesModel->item(z, 0);
@@ -469,7 +577,7 @@ void cMainWindow::on_m_lpTVShowsScan_clicked()
 		QString			szPath	= path->text();
 
 		if(!szPath.isEmpty() && t == SourcesTVShow)
-			m_TVShowList.parse(szPath, m_lpXBMC, ui->m_lpStatusBar);
+			m_TVShowList.parse(szPath, exceptions, m_lpXBMC, ui->m_lpStatusBar);
 	}
 	ui->m_lpStatusBar->showMessage(QString(""));
 

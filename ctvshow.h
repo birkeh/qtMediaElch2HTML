@@ -94,7 +94,7 @@ public:
 	cTVShowList();
 
 	//cMovie*	add(const QString& szFileName, QObject *parent = 0);
-	void		parse(const QString& szPath, cXBMC* lpXBMC = 0, QStatusBar* lpStatusBar = 0);
+	void		parse(const QString& szPath, const QStringList& exceptions, cXBMC* lpXBMC = 0, QStatusBar* lpStatusBar = 0);
 	QStringList	genreList();
 
 private:

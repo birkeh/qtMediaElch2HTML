@@ -4,9 +4,9 @@
 #
 #-------------------------------------------------
 
-QT       += core gui webkit xml sql
+QT       += core gui xml sql
 
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets webkitwidgets
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets webenginewidgets
 
 TARGET = qtMediaElch2HTML
 TEMPLATE = app
